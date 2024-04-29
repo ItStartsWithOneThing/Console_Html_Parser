@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Игнорирование папки Secrets
+Console_Html_Parser/Secrets/
