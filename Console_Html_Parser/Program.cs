@@ -6,7 +6,7 @@ var articul = "30UN0500";
 
 var bimetalRadiatorService = new BimetallicRadiatorService(articul);
 
-var result = await bimetalRadiatorService.GetTargetItemInfo();
+var result = await bimetalRadiatorService.GetTargetItemValuesList();
 
 Tools.ShowItem(result);
 

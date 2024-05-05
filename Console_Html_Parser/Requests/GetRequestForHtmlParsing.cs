@@ -6,28 +6,24 @@ namespace Console_Html_Parser.Requests
 {
     public class GetRequestForHtmlParsing
     {
-        private readonly string _address;
+        private Uri ReferrerHeader { get; set; }
 
-        public string Response { get; set; }
+        public string Response { get; private set; }
+
         private MediaTypeWithQualityHeaderValue AcceptHeader { get; set; }
         private string HostHeader { get; set; }
         private ProductInfoHeaderValue[] UserAgentHeaderParts { get; set; }
-        private Uri ReferrerHeader { get; set; }
         private Dictionary<string, string> CustomHeaders { get; set; } = new Dictionary<string, string>();
         private WebProxy Proxy { get; set; }
 
         public GetRequestForHtmlParsing(
-            string address,
             string acceptHeader,
             string hostHeader,
-            string referrerHeader,
             Dictionary<string, string> customHeaders,
             string proxy)
         {
-            _address = address;
-
-            UserAgentHeaderParts = new ProductInfoHeaderValue[]
-                {
+            UserAgentHeaderParts =
+                [
                     new ProductInfoHeaderValue("Mozilla", "5.0"),
                     new ProductInfoHeaderValue("(Windows NT 10.0; Win64; x64)"),
                     new ProductInfoHeaderValue("AppleWebKit", "537.36"),
@@ -35,17 +31,19 @@ namespace Console_Html_Parser.Requests
                     new ProductInfoHeaderValue("Chrome", "124.0.0.0"),
                     new ProductInfoHeaderValue("Safari", "537.36"),
                     new ProductInfoHeaderValue("Edg", "124.0.0.0")
-                };
+                ];
 
             AcceptHeader = new MediaTypeWithQualityHeaderValue(acceptHeader);
             HostHeader = hostHeader;
-            ReferrerHeader = new Uri(referrerHeader);
+            
             CustomHeaders = customHeaders;
             Proxy = new WebProxy(proxy);
         }
 
-        public async Task Run(CookieContainer cookieContainer)
+        public async Task<string> Run(string address, string referrerHeader, CookieContainer cookieContainer)
         {
+            ReferrerHeader = new Uri(referrerHeader);
+
             var httpHandler = new HttpClientHandler();
             httpHandler.CookieContainer = cookieContainer;
             httpHandler.Proxy = Proxy;
@@ -72,7 +70,7 @@ namespace Console_Html_Parser.Requests
 
                 try
                 {
-                    HttpResponseMessage response = await client.GetAsync(_address);
+                    HttpResponseMessage response = await client.GetAsync(address);
 
                     if (response.IsSuccessStatusCode)
                     {
@@ -82,10 +80,13 @@ namespace Console_Html_Parser.Requests
                     {
                         Console.WriteLine($"Ошибка: status coe {(int)response.StatusCode}");
                     }
+
+                    return await Task.Run(() => Response);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Ошибка выполнения запроса: {ex.Message}");
+                    Console.WriteLine($"Ошибка выполнения запроса: {ex.Message}. URI: {address}");
+                    return await Task.Run(() => Response);
                 }
             }
         }

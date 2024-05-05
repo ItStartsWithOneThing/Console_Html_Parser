@@ -8,22 +8,25 @@ namespace Console_Html_Parser.Services.romstal.ua
 {
     public class BimetallicRadiatorService
     {
-        public BimetallicRadiator TargetItem { get; private set; }
+        private List<BimetallicRadiator> _targetItems;
 
-        public string Host { get; set; } = "romstal.ua";
-        public string Articul { get; set; }
-        public string Address { get; set; }
-        public string Referrer { get; set; }
-        public string AcceptHeader { get; set; } = "*/*";
-        public Dictionary<string, string> Headers { get; set; }
-        public string Proxy { get; set; } = "127.0.0.1:8888";
-        public CookieContainer Cookies { get; set; } = new CookieContainer();
+        private List<List<string>> _targetItemsValues;
 
-        public BimetallicRadiatorService(string articul)
+        private GetRequestForHtmlParsing Request { get; set; }
+
+        private string Host { get; } = "romstal.ua";
+        private string Address { get; set; }
+        private string Referrer { get; set; }
+        private string AcceptHeader { get; } = "*/*";
+        private Dictionary<string, string> Headers { get; set; }
+        private string Proxy { get; } = "127.0.0.1:8888";
+        private CookieContainer Cookies { get; set; } = new CookieContainer();
+
+        public BimetallicRadiatorService()
         {
-            Address = articul;
-            Address = $"https://{Host}/uk/catalog/search?search={articul}";
-            Referrer = $"https://{Host}";
+            _targetItems = new List<BimetallicRadiator>();
+
+            _targetItemsValues = new List<List<string>>();
 
             Headers = new Dictionary<string, string>
             {
@@ -38,35 +41,105 @@ namespace Console_Html_Parser.Services.romstal.ua
             };
         }
 
-        public async Task<BimetallicRadiator> GetTargetItemInfo()
+        /// <summary>
+        /// Fetching needed items from web-site
+        /// </summary>
+        /// <returns>Traget item instance</returns>
+        public async Task<IEnumerable<BimetallicRadiator>> GetTargetItems(List<string> articuls)
         {
-            var searchResult = await GetHtml();
+            try 
+            {
+                articuls.ForEach(async (articul) =>
+                {
+                    Address = $"https://{Host}/uk/catalog/search?search={articul}";
+                    Referrer = $"https://{Host}";
 
-            var targetPath = Tools.FindValue(searchResult, "<div class=\"product__card__img\">", "<a\thref=\"", "\"");
+                    Request = new GetRequestForHtmlParsing(
+                    AcceptHeader,
+                    Host,
+                    Headers,
+                    Proxy);
 
-            Referrer = Address;
-            Address = $"https://{Host}{targetPath}";
+                    var searchResult = await Request.Run(Address, Referrer, Cookies);
 
-            var resultingHtml = await GetHtml();
+                    var targetPath = Tools.FindValue(searchResult, "<div class=\"product__card__img\">", "<a\thref=\"", "\"");
 
-            TargetItem = new BimetallicRadiator(resultingHtml);
+                    Referrer = Address;
+                    Address = $"https://{Host}{targetPath}";
 
-            return await Task.Run(() => TargetItem);
+                    var resultingHtml = await Request.Run(Address, Referrer, Cookies);
+
+                    Create(resultingHtml);
+                });
+            }
+            catch(Exception ex)
+            {
+                await Console.Out.WriteLineAsync($"Error in method \"GetTargetItems\": {ex.Message}.");
+            }
+            
+
+            return await Task.Run(() => _targetItems);
         }
 
-        private async Task<string> GetHtml()
+        /// <summary>
+        /// Getting list of collections with values of target items. Call this method only after "GetTargetItems"
+        /// </summary>
+        /// <returns>Item values</returns>
+        public async Task<IEnumerable<IEnumerable<string>>> GetTargetItemsValuess()
         {
-            var request = new GetRequestForHtmlParsing(
-                Address,
-                AcceptHeader,
-                Host,
-                Referrer,
-                Headers,
-                Proxy);
+            if(_targetItemsValues == null || _targetItemsValues.Count == 0)
+            {
+                await Console.Out.WriteLineAsync($"Error in method \"GetTargetItemValuesList\". GetTargetItemsValuess is null. You must call \"GetTargetItems\" before.");
+            }
 
-            await request.Run(Cookies);
+            return _targetItemsValues;
+        }
 
-            return await Task.Run(() => request.Response);
+        private void Create(string html)
+        {
+            var targetItem = new BimetallicRadiator()
+            {
+                Brand = Tools.FindValue(html, "class=\"item__right product-data-ga\"", "data-brand=\"", "\""),
+                Code = Tools.FindValue(html, "class=\"item__right product-data-ga\"", "data-article=\"", "\""),
+                ManufacturerCode = Tools.FindValue(html, "<p class=\"item__info__side-title\">Код виробника:</p>", "<p class=\"item__info__side-sub\">", "<"),
+                Name = Tools.FindValue(html, "class=\"item__right product-data-ga\"", "data-name=\"", "\""),
+                Price = decimal.Parse(Tools.FindValue(html, "class=\"item__right product-data-ga\"", "data-price=\"", "\"").Replace('.', ',')),
+                Weight = double.Parse(Tools.FindValue(html, "class=\"spec__title\">Вага", "<span class=\"spec__sub\">", "<").Replace('.', ',')),
+                TestPressureInBar = Int32.Parse(Tools.FindValue(html, "<span class=\"spec__title\">Випробний тиск, бар</span>", "<span class=\"spec__sub\">", "<")),
+                SectionHeightInMM = Int32.Parse(Tools.FindValue(html, "<span class=\"spec__title\">Висота секції, мм</span>", "<span class=\"spec__sub\">", "<")),
+                HeightInMM = Int32.Parse(Tools.FindValue(html, "<span class=\"spec__title\">Висота, мм</span>", "class=\"link\">", "<")),
+                GuaranteeInYears = Int32.Parse(Tools.FindValue(html, "<span class=\"spec__title\">Гарантія, років</span>", "<span class=\"spec__sub\">", "<")),
+                SectionDepthInMM = Int32.Parse(Tools.FindValue(html, "<span class=\"spec__title\">Глибина секції, мм</span>", "<span class=\"spec__sub\">", "<")),
+                Color = Tools.FindValue(html, "<span class=\"spec__title\">Колір</span>", "<span class=\"spec__sub\">", "<"),
+                CenterDistanceInMM = Int32.Parse(Tools.FindValue(html, "<span class=\"spec__title\">Міжосьова відстань, мм</span>", "<span class=\"spec__sub\">", "<")),
+                MaxCoolantTemperatureInCelsium = Int32.Parse(Tools.FindValue(html, "<span class=\"spec__title\">Макс. температура теплоносія,", "<span class=\"spec__sub\">", "<")),
+                WorkingPressureInBar = Int32.Parse(Tools.FindValue(html, "<span class=\"spec__title\">Робочий тиск, бар</span>", "<span class=\"spec__sub\">", "<")),
+                HeatOutputWithDefaultTemperatureInW = Int32.Parse(Tools.FindValue(html, "<span class=\"spec__title\">Тепловіддача", "<span class=\"spec__sub\">", "<")),
+                Description = Tools.FindValue(html, "<h4>Опис</h4>", "<p>", "<")
+            };
+
+            _targetItems.Add(targetItem);
+
+            _targetItemsValues.Add(new List<string>()
+            {
+                targetItem.Brand,
+                targetItem.Code,
+                targetItem.ManufacturerCode,
+                targetItem.Name,
+                targetItem.Price.ToString(),
+                targetItem.Weight.ToString(),
+                targetItem.TestPressureInBar.ToString(),
+                targetItem.SectionHeightInMM.ToString(),
+                targetItem.HeightInMM.ToString(),
+                targetItem.GuaranteeInYears.ToString(),
+                targetItem.SectionDepthInMM.ToString(),
+                targetItem.Color,
+                targetItem.CenterDistanceInMM.ToString(),
+                targetItem.MaxCoolantTemperatureInCelsium.ToString(),
+                targetItem.WorkingPressureInBar.ToString(),
+                targetItem.HeatOutputWithDefaultTemperatureInW.ToString(),
+                targetItem.Description
+            });
         }
     }
 }
