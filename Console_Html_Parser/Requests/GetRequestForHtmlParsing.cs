@@ -78,17 +78,16 @@ namespace Console_Html_Parser.Requests
                     }
                     else
                     {
-                        Console.WriteLine($"Ошибка: status coe {(int)response.StatusCode}");
+                        await Console.Out.WriteLineAsync($"Ошибка: status code {(int)response.StatusCode}");
                     }
-
-                    return await Task.Run(() => Response);
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Ошибка выполнения запроса: {ex.Message}. URI: {address}");
-                    return await Task.Run(() => Response);
+                    await Console.Out.WriteLineAsync($"Ошибка выполнения запроса: {ex.Message}. URI: {address}");
                 }
             }
+
+            return Response;
         }
     }
 }

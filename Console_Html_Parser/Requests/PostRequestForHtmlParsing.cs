@@ -62,12 +62,12 @@ namespace Console_Html_Parser.Requests
                     }
                     else
                     {
-                        Console.WriteLine($"Ошибка: status coe {(int)response.StatusCode}");
+                        await Console.Out.WriteLineAsync($"Ошибка: status coe {(int)response.StatusCode}");
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Ошибка выполнения запроса: {ex.Message}");
+                    await Console.Out.WriteLineAsync($"Ошибка выполнения запроса: {ex.Message}");
                 }
             }
         }

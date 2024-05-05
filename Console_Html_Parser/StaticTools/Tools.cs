@@ -45,14 +45,14 @@ namespace Console_Html_Parser.StaticTools
                     string propertyName = property.Name;
 
                     var propertyValue = property.GetValue(item);
-
+                    
                     Console.OutputEncoding = Encoding.UTF8;
                     Console.WriteLine($"{propertyName}: {propertyValue}");
                 }
             }
             catch(Exception ex)
             {
-                Console.Error.WriteLine(ex.Message);
+                Console.WriteLine($"Error in method\"ShowItem\". {ex.Message}");
             }
         }
 
@@ -75,14 +75,14 @@ namespace Console_Html_Parser.StaticTools
         /// </summary>
         /// <param name="propertiesNames">List of items that represent's collection of their propery names</param>
         /// <param name="propertiesValues">List of values for corresponding property name</param>
-        public static void ShowItems(List<List<string>> propertiesNames, List<string> propertiesValues)
+        public static void ShowItems(List<string> propertiesNames, List<List<string>> propertiesValues)
         {
-            foreach(List<string> properties in propertiesNames)
+            foreach(List<string> values in propertiesValues)
             {
-                for (int i = 0; i < properties.Count; i++)
+                for (int i = 0; i < values.Count; i++)
                 {
                     Console.OutputEncoding = Encoding.UTF8;
-                    Console.WriteLine($"{properties[i]}: {propertiesValues[i]}");
+                    Console.WriteLine($"{propertiesNames[i]}: {values[i]}");
                 }
             }
         }
@@ -98,7 +98,7 @@ namespace Console_Html_Parser.StaticTools
         {
             try
             {
-                if (fileName == String.Empty || fileName == null)
+                if (String.IsNullOrEmpty(fileName))
                 {
                     throw new NullReferenceException();
                 }
@@ -119,11 +119,11 @@ namespace Console_Html_Parser.StaticTools
                     //If worksheet is not exist then create one
                     if (package.Workbook.Worksheets.Count() > 0)
                     {
-                        worksheet = package.Workbook.Worksheets.Add("Sheet-1");
+                        worksheet = package.Workbook.Worksheets.Add("Sheet1");
                     }
                     else
                     {
-                        worksheet = package.Workbook.Worksheets["Sheet-1"];
+                        worksheet = package.Workbook.Worksheets["Sheet1"];
                     }
 
                     //If header is empty, then fill it up
@@ -174,7 +174,7 @@ namespace Console_Html_Parser.StaticTools
         {
             try
             {
-                if (fileName == "" || fileName == null)
+                if (String.IsNullOrEmpty(fileName))
                 {
                     throw new NullReferenceException();
                 }
@@ -291,6 +291,120 @@ namespace Console_Html_Parser.StaticTools
             }
 
             return xmlItem;
+        }
+
+        public static async Task<List<string>> GetArticulsFromTextFile(string fileName)
+        {
+            var articuls = new List<string>();
+
+            try
+            {
+                if (String.IsNullOrEmpty(fileName))
+                {
+                    throw new NullReferenceException();
+                }
+
+                fileName += ".txt";
+
+                var desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                var filePath = Path.Combine(desktopPath, fileName);
+
+                var articulsArray = await File.ReadAllLinesAsync(filePath, Encoding.UTF8);
+
+                articuls.AddRange(articulsArray);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"Error in method \"GetArticulsFromTextFile\": {ex.Message}");
+            }
+
+            return await Task.Run(() =>  articuls);
+        }
+
+        public static async Task<List<string>> GetArticulsFromExcelFile(string fileName)
+        {
+            var articuls = new List<string>();
+
+            try
+            {
+                if (String.IsNullOrEmpty(fileName))
+                {
+                    throw new NullReferenceException();
+                }
+
+                fileName += ".xlsx";
+
+                var desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                var filePath = Path.Combine(desktopPath, fileName);
+
+                FileInfo file = new FileInfo(filePath);
+
+                ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+                using (var package = new ExcelPackage(file))
+                {
+                    ExcelWorksheet worksheet = package.Workbook.Worksheets["Sheet1"];
+
+                    int rowNumber = 1;
+
+                    while (true)
+                    {
+                        string? aricul = (string)worksheet.Cells[rowNumber, 1].Value;
+
+                        if (aricul == null)
+                        {
+                            break;
+                        }
+
+                        articuls.Add(aricul);
+
+                        rowNumber++;
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"Error in method \"GetArticulsFromExcelFile\": {ex.Message}");
+            }
+
+            return await Task.Run(() => articuls);
+        }
+
+        public static List<string> GetArticulsFromConsoleInput()
+        {
+            var articuls = new List<string>();
+
+            try
+            {
+                while (true)
+                {
+                    var articul = Console.ReadLine();
+                    if (String.IsNullOrEmpty(articul))
+                    {
+                        Console.WriteLine("Вы не ввели артикул.\nУ вас осталась одна попытка ввода.");
+                        articul = Console.ReadLine();
+
+                        if (String.IsNullOrEmpty(articul))
+                        {
+                            Console.WriteLine("Не введено.");
+                            Console.WriteLine();
+
+                            Console.WriteLine("Ищу информацию по данным артикулам...");
+                            Console.WriteLine();
+
+                            break;
+                        }
+                    }
+
+                    articuls.Add(articul);
+                }
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine($"Error in method \"GetArticulFromConsoleInput\": {ex.Message}");
+            }
+
+            return articuls;
         }
     }
 }

@@ -45,7 +45,7 @@ namespace Console_Html_Parser.Services.romstal.ua
         /// Fetching needed items from web-site
         /// </summary>
         /// <returns>Traget item instance</returns>
-        public async Task<IEnumerable<BimetallicRadiator>> GetTargetItems(List<string> articuls)
+        public async Task<List<BimetallicRadiator>> GetTargetItems(List<string> articuls)
         {
             try 
             {
@@ -62,12 +62,16 @@ namespace Console_Html_Parser.Services.romstal.ua
 
                     var searchResult = await Request.Run(Address, Referrer, Cookies);
 
+                    await Console.Out.WriteLineAsync(" 65 var searchResult = await Request.Run(Address, Referrer, Cookies);"); // ИНДИКАТОР ВЫПОЛНЕНИЯ ДЛЯ КОНСОЛИ
+
                     var targetPath = Tools.FindValue(searchResult, "<div class=\"product__card__img\">", "<a\thref=\"", "\"");
 
                     Referrer = Address;
                     Address = $"https://{Host}{targetPath}";
 
                     var resultingHtml = await Request.Run(Address, Referrer, Cookies);
+
+                    await Console.Out.WriteLineAsync("Launched 74 var resultingHtml = await Request.Run(Address, Referrer, Cookies);"); // ИНДИКАТОР ВЫПОЛНЕНИЯ ДЛЯ КОНСОЛИ
 
                     Create(resultingHtml);
                 });
@@ -78,20 +82,20 @@ namespace Console_Html_Parser.Services.romstal.ua
             }
             
 
-            return await Task.Run(() => _targetItems);
+            return _targetItems;
         }
 
         /// <summary>
         /// Getting list of collections with values of target items. Call this method only after "GetTargetItems"
         /// </summary>
         /// <returns>Item values</returns>
-        public async Task<IEnumerable<IEnumerable<string>>> GetTargetItemsValuess()
+        public List<List<string>> GetTargetItemsValues()
         {
             if(_targetItemsValues == null || _targetItemsValues.Count == 0)
             {
-                await Console.Out.WriteLineAsync($"Error in method \"GetTargetItemValuesList\". GetTargetItemsValuess is null. You must call \"GetTargetItems\" before.");
+                Console.WriteLine($"Error in method \"GetTargetItemsValues\". GetTargetItemsValues is null. You must call \"GetTargetItems\" before.");
             }
-
+            
             return _targetItemsValues;
         }
 
@@ -120,7 +124,7 @@ namespace Console_Html_Parser.Services.romstal.ua
 
             _targetItems.Add(targetItem);
 
-            _targetItemsValues.Add(new List<string>()
+            var itemValues = new List<string>()
             {
                 targetItem.Brand,
                 targetItem.Code,
@@ -139,7 +143,9 @@ namespace Console_Html_Parser.Services.romstal.ua
                 targetItem.WorkingPressureInBar.ToString(),
                 targetItem.HeatOutputWithDefaultTemperatureInW.ToString(),
                 targetItem.Description
-            });
+            };
+
+            _targetItemsValues.Add(itemValues);
         }
     }
 }
