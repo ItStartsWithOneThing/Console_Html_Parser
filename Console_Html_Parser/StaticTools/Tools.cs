@@ -198,7 +198,7 @@ namespace Console_Html_Parser.StaticTools
         /// <param name="items"></param>
         /// <param name="fileName"></param>
         /// <exception cref="NullReferenceException"></exception>
-        public static async void SaveInTextFile(List<string> items, string fileName)
+        public static async Task SaveInTextFile(List<string> items, string fileName)
         {
             try
             {
@@ -318,10 +318,10 @@ namespace Console_Html_Parser.StaticTools
                 Console.WriteLine($"Error in method \"GetArticulsFromTextFile\": {ex.Message}");
             }
 
-            return await Task.Run(() =>  articuls);
+            return articuls;
         }
 
-        public static async Task<List<string>> GetArticulsFromExcelFile(string fileName)
+        public static List<string> GetArticulsFromExcelFile(string fileName)
         {
             var articuls = new List<string>();
 
@@ -367,7 +367,7 @@ namespace Console_Html_Parser.StaticTools
                 Console.WriteLine($"Error in method \"GetArticulsFromExcelFile\": {ex.Message}");
             }
 
-            return await Task.Run(() => articuls);
+            return articuls;
         }
 
         public static List<string> GetArticulsFromConsoleInput()

@@ -49,7 +49,7 @@ namespace Console_Html_Parser.Services.romstal.ua
         {
             try 
             {
-                articuls.ForEach(async (articul) =>
+                foreach (var articul in articuls)
                 {
                     Address = $"https://{Host}/uk/catalog/search?search={articul}";
                     Referrer = $"https://{Host}";
@@ -62,7 +62,7 @@ namespace Console_Html_Parser.Services.romstal.ua
 
                     var searchResult = await Request.Run(Address, Referrer, Cookies);
 
-                    await Console.Out.WriteLineAsync(" 65 var searchResult = await Request.Run(Address, Referrer, Cookies);"); // ИНДИКАТОР ВЫПОЛНЕНИЯ ДЛЯ КОНСОЛИ
+                    Console.WriteLine(" 65 var searchResult = await Request.Run(Address, Referrer, Cookies);"); // ИНДИКАТОР ВЫПОЛНЕНИЯ ДЛЯ КОНСОЛИ
 
                     var targetPath = Tools.FindValue(searchResult, "<div class=\"product__card__img\">", "<a\thref=\"", "\"");
 
@@ -71,14 +71,14 @@ namespace Console_Html_Parser.Services.romstal.ua
 
                     var resultingHtml = await Request.Run(Address, Referrer, Cookies);
 
-                    await Console.Out.WriteLineAsync("Launched 74 var resultingHtml = await Request.Run(Address, Referrer, Cookies);"); // ИНДИКАТОР ВЫПОЛНЕНИЯ ДЛЯ КОНСОЛИ
+                    Console.WriteLine("Launched 74 var resultingHtml = await Request.Run(Address, Referrer, Cookies);"); // ИНДИКАТОР ВЫПОЛНЕНИЯ ДЛЯ КОНСОЛИ
 
                     Create(resultingHtml);
-                });
+                }
             }
             catch(Exception ex)
             {
-                await Console.Out.WriteLineAsync($"Error in method \"GetTargetItems\": {ex.Message}.");
+                Console.WriteLine($"Error in method \"GetTargetItems\": {ex.Message}.");
             }
             
 
